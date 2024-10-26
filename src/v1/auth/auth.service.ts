@@ -10,17 +10,21 @@ import { comparePassword } from '@/src/helpers';
 import { LoginAuthDtoV1, ResLoginDtoV1 } from '@/src/v1/auth/dto';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
 
+import { TokenServiceV1 } from '../token/token.service';
+
 @Injectable()
 export class AuthServiceV1 {
   constructor(
     private usersService: UsersServiceV1,
     private jwtService: JwtService,
+    private tokenServiec: TokenServiceV1,
   ) {}
+
   async login(loginAuthDtoV1: LoginAuthDtoV1) {
     try {
       const { userEmail, userPassword } = loginAuthDtoV1;
       const user = await this.usersService.findOne(
-        { userEmail },
+        { userEmail: userEmail },
         { id: true, userEmail: true, userPassword: true },
       );
       const isCorrectPassword = await comparePassword(
@@ -32,6 +36,9 @@ export class AuthServiceV1 {
       }
       const payload = { sub: user.id, userEmail: user.userEmail };
       const accessToken = await this.genAccessToken(payload);
+      // Save Access Token To The DB.
+      const authTokenDto = { accessToken, user };
+      await this.tokenServiec.create(authTokenDto);
       return {
         ...user,
         accessToken,
