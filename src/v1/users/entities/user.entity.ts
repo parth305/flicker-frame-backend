@@ -3,9 +3,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { UserInfo } from './user-info.entity';
+import { Token } from '../../auth/entities/token.entity';
 
 @Entity()
 export class User {
@@ -34,4 +39,10 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToOne((_type) => UserInfo, (userInfo) => userInfo.user, { lazy: true })
+  userInfo: UserInfo;
+
+  @OneToMany((_type) => Token, (token) => token.user, { lazy: true })
+  accessTokens: Token[];
 }

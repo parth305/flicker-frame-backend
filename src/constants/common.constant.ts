@@ -1,0 +1,6 @@
+export const CONSTANTS = {
+  USERS: {
+    USER_FIRST_NAME_MAX_LENGTH: 30,
+    USER_LAST_NAME_MAX_LENGTH: 30,
+  },
+};
