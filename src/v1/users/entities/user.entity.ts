@@ -2,6 +2,7 @@ import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   OneToOne,
@@ -34,11 +35,17 @@ export class User {
   @IsNotEmpty({ message: 'Password should not be empty' })
   userPassword: string;
 
+  @Column({ default: false, nullable: false })
+  emailVerified: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @OneToOne((_type) => UserInfo, (userInfo) => userInfo.user, { lazy: true })
   userInfo: UserInfo;

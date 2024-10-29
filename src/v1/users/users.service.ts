@@ -25,17 +25,24 @@ export class UsersServiceV1 {
 
   async create(createUserDto: CreateUserDtoV1) {
     try {
-      const isExist = await this.exists({
-        userEmail: createUserDto.userEmail,
+      const { userName, userEmail, userPassword } = createUserDto;
+      const isEmailAlreadyPresent = await this.exists({
+        userEmail,
       });
-      if (isExist) {
+      if (isEmailAlreadyPresent) {
         throw new BadRequestException(
           'User is already registered with same email',
         );
       }
-      createUserDto.userPassword = await hashPassword(
-        createUserDto.userPassword,
-      );
+      const isUserNameAlreadyPresent = await this.exists({
+        userName,
+      });
+      if (isUserNameAlreadyPresent) {
+        throw new BadRequestException(
+          'User is already registered with same username',
+        );
+      }
+      createUserDto.userPassword = await hashPassword(userPassword);
       const user = this.usersRepository.create(createUserDto);
       await this.usersRepository.save(user);
       return user;
