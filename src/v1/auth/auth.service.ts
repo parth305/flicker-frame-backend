@@ -1,23 +1,32 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { ENV_VARIABLES } from '@/src/config';
+import { CONSTANTS } from '@/src/constants/common.constant';
 import { comparePassword } from '@/src/helpers';
+import { MailService } from '@/src/mail/mail.service';
 import { LoginAuthDtoV1, ResLoginDtoV1 } from '@/src/v1/auth/dto';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
 
+import { SignUpAuthDtoV1 } from './dto/sign-up-auth-dto';
+import { UserSignUpResponseDtoV1 } from './dto/user-sign-up-res.dto';
+import { OtpService } from './otp/otp.service';
 import { TokenServiceV1 } from '../token/token.service';
+import { CreateUserDtoV1 } from '../users/dto';
 
 @Injectable()
 export class AuthServiceV1 {
   constructor(
     private usersService: UsersServiceV1,
     private jwtService: JwtService,
-    private tokenServiec: TokenServiceV1,
+    private tokenService: TokenServiceV1,
+    private mailService: MailService,
+    private otpService: OtpService,
   ) {}
 
   async login(loginAuthDtoV1: LoginAuthDtoV1) {
@@ -27,6 +36,14 @@ export class AuthServiceV1 {
         { userEmail: userEmail },
         { id: true, userEmail: true, userPassword: true },
       );
+      console.log('May be will break');
+      // TODO : Add Redirect Logic to not allow login if email is not verified
+      const isEmailVerified = user.emailVerified;
+      if (!isEmailVerified)
+        throw new ForbiddenException(
+          CONSTANTS.ERROR_MESSAGE.EMAIL_NOT_VERIFIED,
+        );
+
       const isCorrectPassword = await comparePassword(
         userPassword,
         user.userPassword,
@@ -38,13 +55,13 @@ export class AuthServiceV1 {
       const accessToken = await this.genAccessToken(payload);
       // Save Access Token To The DB.
       const authTokenDto = { accessToken, user };
-      await this.tokenServiec.create(authTokenDto);
+      await this.tokenService.create(authTokenDto);
       return {
         ...user,
         accessToken,
       } as unknown as ResLoginDtoV1;
     } catch (err) {
-      throw new UnauthorizedException('Invalid data');
+      throw new UnauthorizedException('Invalid data' + err.message);
     }
   }
 
@@ -54,6 +71,7 @@ export class AuthServiceV1 {
     tokenExpire: string | number,
   ) {
     try {
+      console.log(payload, '==');
       const token = await this.jwtService.signAsync(payload, {
         expiresIn: tokenExpire,
         secret: tokenSecret,
@@ -77,6 +95,7 @@ export class AuthServiceV1 {
 
   async genAccessToken(data: object) {
     try {
+      console.log('Starting To Generate Token');
       const accessToken = await this.genJWT(
         data,
         ENV_VARIABLES.ACCESS_TOKEN_SECRET,
@@ -99,4 +118,54 @@ export class AuthServiceV1 {
       throw new UnauthorizedException(err.message);
     }
   }
+
+  async signUp(signUpDto: SignUpAuthDtoV1): Promise<UserSignUpResponseDtoV1> {
+    const { userName, userPassword, userEmail } = signUpDto;
+    const userCreationDto: CreateUserDtoV1 = {
+      userName,
+      userEmail,
+      userPassword,
+      emailVerified: false,
+    };
+    const createdUser = await this.usersService.create(userCreationDto);
+    console.log('User Created');
+    //  Generate Access Token
+    const accessToken = await this.genAccessToken({
+      sub: createdUser.id,
+      userEmail,
+    });
+    const authTokenDto = { accessToken, user: createdUser };
+    await this.tokenService.create(authTokenDto);
+
+    // Generate OTP
+    const otp = await this.otpService.generateOtp(userEmail);
+    // Send Mail
+    this.mailService.sendMail(
+      userEmail,
+      'Your Account Is Created Successfully',
+      `Please Do Work Your Otp Is ${otp}`,
+    );
+    return { accessToken, userName, userEmail, emailVerified: false };
+  }
+
+  async verifyOtp(userEmail: string, otpValue: number) {
+    try {
+      const otpVerificationRespone = await this.otpService.verifyOtp(
+        userEmail,
+        otpValue,
+      );
+      const { verified } = otpVerificationRespone;
+      if (verified) {
+        await this.usersService.update(
+          { userEmail },
+          { emailVerified: verified },
+        );
+        return otpVerificationRespone;
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async logout() {}
 }

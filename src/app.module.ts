@@ -15,6 +15,7 @@ import { V1Module } from '@/src/v1/v1.module';
     ThrottlerModule.forRoot(throttlerConfig),
     TypeOrmModule.forRoot(typeOrmConfig),
     JwtModule.register(jwtConfig),
+
     // CacheModule.registerAsync(cacheConfig),
   ],
   controllers: [AppController],
