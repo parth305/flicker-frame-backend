@@ -31,10 +31,10 @@ export class TokenServiceV1 {
     return tokens;
   }
 
-  async remove({ user, accessToken }: AuthTokenDtoV1) {
+  async remove(userId: number, accessToken: string) {
     try {
       const token = await this.tokenRepoSitory.findOneByOrFail({
-        user: { id: user.id },
+        user: { id: userId },
         accessToken: accessToken,
       });
       await this.tokenRepoSitory.remove(token);

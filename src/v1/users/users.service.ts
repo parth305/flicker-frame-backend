@@ -17,10 +17,14 @@ import {
 } from '@/src/v1/users/dto';
 import { User } from '@/src/v1/users/entities/user.entity';
 
+import { UserInfo } from './entities/user-info.entity';
+
 @Injectable()
 export class UsersServiceV1 {
   constructor(
     @InjectRepository(User) private usersRepository: Repository<User>,
+    @InjectRepository(UserInfo)
+    private usersInfoRepository: Repository<UserInfo>,
   ) {}
 
   async create(createUserDto: CreateUserDtoV1) {
@@ -127,5 +131,14 @@ export class UsersServiceV1 {
   async exists(conditions: ConditionUserDtoV1) {
     const isExists = await this.usersRepository.existsBy(conditions);
     return isExists;
+  }
+
+  async addUserInfo(currentUser, userInfo: CreateUserDtoV1) {
+    const userId = currentUser.id;
+    console.log(userInfo, userId);
+  }
+
+  async getUserInfo(accessToken: string) {
+    console.log(accessToken);
   }
 }

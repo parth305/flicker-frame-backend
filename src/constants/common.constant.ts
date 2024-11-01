@@ -10,6 +10,7 @@ export const CONSTANTS = {
     OTP_TIME_EXPIRED: 'Otp is expired , kindly generate the new one.',
     MAX_OTP_ATTEMPTS_REACHED:
       'You have exceeded the maximum number of otp attempts',
+    EMAIL_NOT_VERIFIED: 'Email Is not verified',
   },
   PASSWORD: {
     DEFAULT_MIN_LENGTH: 8,

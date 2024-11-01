@@ -22,6 +22,8 @@ import {
 import { User } from '@/src/v1/users/entities/user.entity';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
 
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+
 @Serializer(ResUserDtoV1)
 @AuthenticationV1() // Authentication decorator
 @Controller({ path: 'users', version: '1' })
@@ -81,5 +83,17 @@ export class UsersControllerV1 {
   ): Promise<IResponse<User>> {
     const deletedUser = await this.usersService.remove({ id });
     return { data: deletedUser, message: 'User deleted successfully' };
+  }
+
+  @Post('/userInfo/me')
+  async addUserInfo(
+    @CurrentUser() currentUser: any,
+    @Body() createUserDto: CreateUserDtoV1,
+  ) {
+    const userInfo = await this.usersService.addUserInfo(
+      currentUser,
+      createUserDto,
+    );
+    return userInfo;
   }
 }

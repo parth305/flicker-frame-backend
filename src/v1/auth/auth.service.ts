@@ -167,5 +167,25 @@ export class AuthServiceV1 {
     }
   }
 
-  async logout() {}
+  async logout(authHeader: string) {
+    try {
+      const payLoad = await this.verifyAccessToken(authHeader);
+      const userId = payLoad?.id;
+
+      await this.tokenService.remove(userId, authHeader);
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async getCurrentlyLoggedInUser(accessToken: string) {
+    const userId = await this.verifyAccessToken(accessToken);
+    const user = this.usersService.findOne({ id: userId });
+    return user;
+  }
+
+  async userNameAlreadyExists(userName: string) {
+    const exists = await this.usersService.exists({ userName: userName });
+    return exists;
+  }
 }

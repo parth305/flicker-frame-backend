@@ -42,6 +42,7 @@ export class OtpService {
         };
       }
       if (userOtpModel.otpAttempts == CONSTANTS.OTP.MAX_ALLOWED_ATTEMPTS) {
+        await this.userOtpRepository.remove(userOtpModel);
         return {
           message: CONSTANTS.ERROR_MESSAGE.MAX_OTP_ATTEMPTS_REACHED,
           verified: false,
@@ -60,6 +61,7 @@ export class OtpService {
         };
       }
 
+      await this.userOtpRepository.remove(userOtpModel);
       return { message: null, verified: true };
     } catch (err) {
       throw err;

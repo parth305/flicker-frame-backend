@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  Param,
+} from '@nestjs/common';
 
 import { Serializer } from '@/src/common/decorators';
 import { IResponse } from '@/src/common/interfaces';
@@ -33,17 +41,31 @@ export class AuthControllerV1 {
 
   @Post('verifyOtp')
   @UseGuards(AuthGuardV1)
-  async verifyOtp(@Body() userOtpRequest: UserOtpRequestDto) {
+  async verifyOtp(
+    @Body() userOtpRequest: UserOtpRequestDto,
+  ): Promise<IResponse<any>> {
     const { userEmail, otpValue } = userOtpRequest;
     const { verified, message } = await this.authService.verifyOtp(
       userEmail,
       otpValue,
     );
-    if (verified) return { message: 'Otp Verified Successfully' };
-    else return { message };
+    if (verified) return { message: 'Otp Verified Successfully', data: null };
+    else return { message, data: null };
   }
 
   @Get('logout')
   @UseGuards(AuthGuardV1)
-  async logout() {}
+  async logout(@Req() req: Request): Promise<IResponse<any>> {
+    const authHeader = req.headers.get('Authorization');
+    await this.authService.logout(authHeader);
+    return { message: 'User logged out successfully', data: null };
+  }
+
+  @Get('/exists/:username')
+  async isUserNameAlreadyExists(
+    @Param('username') username: string,
+  ): Promise<IResponse<any>> {
+    const userExists = await this.authService.userNameAlreadyExists(username);
+    return { data: { userExists }, message: null };
+  }
 }
