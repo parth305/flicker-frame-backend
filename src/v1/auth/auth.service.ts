@@ -34,9 +34,8 @@ export class AuthServiceV1 {
       const { userEmail, userPassword } = loginAuthDtoV1;
       const user = await this.usersService.findOne(
         { userEmail: userEmail },
-        { id: true, userEmail: true, userPassword: true },
+        { id: true, userEmail: true, userPassword: true, emailVerified: true },
       );
-      console.log('May be will break');
       // TODO : Add Redirect Logic to not allow login if email is not verified
       const isEmailVerified = user.emailVerified;
       if (!isEmailVerified)
@@ -53,7 +52,7 @@ export class AuthServiceV1 {
       }
       const payload = { sub: user.id, userEmail: user.userEmail };
       const accessToken = await this.genAccessToken(payload);
-      // Save Access Token To The DB.
+      // Save Access Token To The DB With User ID.
       const authTokenDto = { accessToken, user };
       await this.tokenService.create(authTokenDto);
       return {
@@ -71,7 +70,6 @@ export class AuthServiceV1 {
     tokenExpire: string | number,
   ) {
     try {
-      console.log(payload, '==');
       const token = await this.jwtService.signAsync(payload, {
         expiresIn: tokenExpire,
         secret: tokenSecret,
@@ -128,15 +126,13 @@ export class AuthServiceV1 {
       emailVerified: false,
     };
     const createdUser = await this.usersService.create(userCreationDto);
-    console.log('User Created');
-    //  Generate Access Token
+    //  Generate Access Token For the user
     const accessToken = await this.genAccessToken({
       sub: createdUser.id,
       userEmail,
     });
     const authTokenDto = { accessToken, user: createdUser };
     await this.tokenService.create(authTokenDto);
-
     // Generate OTP
     const otp = await this.otpService.generateOtp(userEmail);
     // Send Mail

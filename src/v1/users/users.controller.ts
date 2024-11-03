@@ -8,6 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { Serializer } from '@/src/common/decorators';
@@ -23,6 +24,7 @@ import { User } from '@/src/v1/users/entities/user.entity';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthGuardV1 } from '../auth/guards';
 
 @Serializer(ResUserDtoV1)
 @AuthenticationV1() // Authentication decorator
@@ -85,15 +87,11 @@ export class UsersControllerV1 {
     return { data: deletedUser, message: 'User deleted successfully' };
   }
 
+  @UseGuards(AuthGuardV1)
   @Post('/userInfo/me')
-  async addUserInfo(
-    @CurrentUser() currentUser: any,
-    @Body() createUserDto: CreateUserDtoV1,
-  ) {
-    const userInfo = await this.usersService.addUserInfo(
-      currentUser,
-      createUserDto,
-    );
+  async addUserInfo(@CurrentUser() currentUser: any) {
+    console.log(currentUser);
+    const userInfo = await this.usersService.addUserInfo(currentUser, null);
     return userInfo;
   }
 }
