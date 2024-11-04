@@ -15,6 +15,8 @@ export class IsValidPasswordConstraint implements ValidatorConstraintInterface {
     const options: PasswordValidationOptions =
       validationArguments.constraints[0];
 
+    if (!password) return false;
+
     // If None Option is provided we set the default values
     const minLength =
       options?.minLength || CONSTANTS.PASSWORD.DEFAULT_MIN_LENGTH;

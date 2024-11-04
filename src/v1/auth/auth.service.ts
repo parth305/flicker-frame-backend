@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
+import { ICurrentUser } from '@/src/common/interfaces/current-user.interface';
 import { ENV_VARIABLES } from '@/src/config';
 import { CONSTANTS } from '@/src/constants/common.constant';
 import { comparePassword } from '@/src/helpers';
@@ -136,28 +137,41 @@ export class AuthServiceV1 {
     // Generate OTP
     const otp = await this.otpService.generateOtp(userEmail);
     // Send Mail
-    this.mailService.sendMail(
-      userEmail,
-      'Your Account Is Created Successfully',
-      `Please Do Work Your Otp Is ${otp}`,
-    );
+    this.mailService.sendMail({
+      to: [userEmail],
+      template: './new-user-otp',
+      subject: 'Welcome To Flicker Frame',
+      context: {
+        userName,
+        otp,
+        expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
+      },
+    });
     return { accessToken, userName, userEmail, emailVerified: false };
   }
 
-  async verifyOtp(userEmail: string, otpValue: number) {
+  async verifyOtp(
+    userEmail: string,
+    otpValue: number,
+    currentUser: ICurrentUser,
+  ) {
     try {
+      if (currentUser.userEmail !== userEmail) {
+        throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGE.UNAUTHORIZED);
+      }
       const otpVerificationRespone = await this.otpService.verifyOtp(
         userEmail,
         otpValue,
       );
+      console.log(otpVerificationRespone, '=');
       const { verified } = otpVerificationRespone;
       if (verified) {
         await this.usersService.update(
           { userEmail },
           { emailVerified: verified },
         );
-        return otpVerificationRespone;
       }
+      return otpVerificationRespone;
     } catch (err) {
       throw err;
     }
@@ -176,7 +190,7 @@ export class AuthServiceV1 {
 
   async getCurrentlyLoggedInUser(accessToken: string) {
     const userId = await this.verifyAccessToken(accessToken);
-    const user = this.usersService.findOne({ id: userId });
+    const user = await this.usersService.findOne({ id: userId });
     return user;
   }
 

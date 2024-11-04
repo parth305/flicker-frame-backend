@@ -69,7 +69,10 @@ export class OtpService {
   }
 
   private generateRandomOtp() {
-    const otp = Math.floor(Math.random() * Math.pow(10, CONSTANTS.OTP.LENGTH));
+    const otp = Math.floor(
+      Math.pow(10, CONSTANTS.OTP.LENGTH - 1) +
+        Math.random() * 9 * Math.pow(10, CONSTANTS.OTP.LENGTH - 1),
+    );
     return otp;
   }
 }

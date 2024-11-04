@@ -10,9 +10,11 @@ import {
 
 import { Serializer } from '@/src/common/decorators';
 import { IResponse } from '@/src/common/interfaces';
+import { ICurrentUser } from '@/src/common/interfaces/current-user.interface';
 import { AuthServiceV1 } from '@/src/v1/auth/auth.service';
 import { LoginAuthDtoV1, ResLoginDtoV1 } from '@/src/v1/auth/dto';
 
+import { CurrentUser } from './decorators/current-user.decorator';
 import { SignUpAuthDtoV1 } from './dto/sign-up-auth-dto';
 import { UserSignUpResponseDtoV1 } from './dto/user-sign-up-res.dto';
 import { AuthGuardV1 } from './guards';
@@ -42,12 +44,14 @@ export class AuthControllerV1 {
   @Post('verifyOtp')
   @UseGuards(AuthGuardV1)
   async verifyOtp(
+    @CurrentUser() currentUser: ICurrentUser,
     @Body() userOtpRequest: UserOtpRequestDto,
   ): Promise<IResponse<any>> {
     const { userEmail, otpValue } = userOtpRequest;
     const { verified, message } = await this.authService.verifyOtp(
       userEmail,
       otpValue,
+      currentUser,
     );
     if (verified) return { message: 'Otp Verified Successfully', data: null };
     else return { message, data: null };

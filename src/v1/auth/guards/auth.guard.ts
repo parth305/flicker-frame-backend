@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 
+import { AUTH_CONSTANTS } from '@/src/constants/auth.constants';
 import { CONSTANTS } from '@/src/constants/common.constant';
 import { AuthServiceV1 } from '@/src/v1/auth/auth.service';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
@@ -23,7 +24,6 @@ export class AuthGuardV1 implements CanActivate {
     try {
       const request: Request = context.switchToHttp().getRequest();
       const authorizationHeader = request.headers['authorization'];
-
       if (!authorizationHeader) {
         throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGE.TOKEN_MISSING);
       }
@@ -31,8 +31,20 @@ export class AuthGuardV1 implements CanActivate {
       if (tokenType !== 'Bearer' || !accessToken) {
         throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGE.INVALID_TOKEN);
       }
+
       const payload = await this.authService.verifyAccessToken(accessToken);
 
+      // verify if the email is verified or not
+      if (!AUTH_CONSTANTS.ALLOWED_UNVERIFIED_ROUTS.includes(request.baseUrl)) {
+        const isEmailVerified = await this.usersService.findOne(
+          { id: payload.sub },
+          { emailVerified: true },
+        );
+        if (!isEmailVerified)
+          throw new UnauthorizedException(
+            CONSTANTS.ERROR_MESSAGE.EMAIL_NOT_VERIFIED,
+          );
+      }
       // Verify If User Is Logged Out Or not
       const tokens = await this.tokenService.fetchAllTokensForAUser(
         payload.sub,
