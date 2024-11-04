@@ -28,10 +28,10 @@ export class IsValidPasswordConstraint implements ValidatorConstraintInterface {
       options?.minSpecialCharacters ||
       CONSTANTS.PASSWORD.DEFAULT_MIN_SPECIAL_CHAR_COUNT;
 
-    const lowercaseCount = (password.match(/[a-z]/g) || []).length;
-    const uppercaseCount = (password.match(/[A-Z]/g) || []).length;
-    const numberCount = (password.match(/[0-9]/g) || []).length;
-    const specialCharCount = (password.match(/[\W_]/g) || []).length;
+    const lowercaseCount = (password?.match(/[a-z]/g) || []).length;
+    const uppercaseCount = (password?.match(/[A-Z]/g) || []).length;
+    const numberCount = (password?.match(/[0-9]/g) || []).length;
+    const specialCharCount = (password?.match(/[\W_]/g) || []).length;
 
     return (
       password.length >= minLength &&
