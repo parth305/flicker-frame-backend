@@ -1,29 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
-import { Attachment } from 'nodemailer/lib/mailer';
-
-import { MailConfig } from '../config';
+import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class MailService {
-  async sendMail(
-    mailTo: string | string[],
-    mailSubject?: string,
-    mailBody?: string,
-    mailAttachments?: Attachment[],
-    cc?: string[],
-    bcc?: string[],
-  ) {
+  constructor(private readonly mailerService: MailerService) {}
+  async sendMail(mailOptions: ISendMailOptions) {
     try {
-      await nodemailer.createTransport(MailConfig).sendMail({
-        from: process.env.MAIL_USER,
-        to: mailTo,
-        subject: mailSubject,
-        text: mailBody,
-        attachments: mailAttachments,
-        cc,
-        bcc,
-      });
+      await this.mailerService.sendMail(mailOptions);
     } catch (err) {
       console.log(err);
     }
