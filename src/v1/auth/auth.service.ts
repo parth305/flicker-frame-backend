@@ -198,4 +198,19 @@ export class AuthServiceV1 {
     const exists = await this.usersService.exists({ userName: userName });
     return exists;
   }
+
+  async generateOtp(userEmail: string, userName: string): Promise<void> {
+    const otp = await this.otpService.generateOtp(userEmail);
+    this.mailService.sendMail({
+      to: [userEmail],
+      template: './new-user-otp',
+      subject: 'Welcome To Flicker Frame',
+      context: {
+        userName,
+        otp,
+        expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
+      },
+    });
+    return;
+  }
 }

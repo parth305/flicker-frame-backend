@@ -6,11 +6,13 @@ import {
   UseGuards,
   Req,
   Param,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { Serializer } from '@/src/common/decorators';
 import { IResponse } from '@/src/common/interfaces';
 import { ICurrentUser } from '@/src/common/interfaces/current-user.interface';
+import { CONSTANTS } from '@/src/constants/common.constant';
 import { AuthServiceV1 } from '@/src/v1/auth/auth.service';
 import { LoginAuthDtoV1, ResLoginDtoV1 } from '@/src/v1/auth/dto';
 
@@ -43,6 +45,7 @@ export class AuthControllerV1 {
 
   @Post('verifyOtp')
   @UseGuards(AuthGuardV1)
+  @Serializer(ResLoginDtoV1)
   async verifyOtp(
     @CurrentUser() currentUser: ICurrentUser,
     @Body() userOtpRequest: UserOtpRequestDto,
@@ -53,8 +56,14 @@ export class AuthControllerV1 {
       otpValue,
       currentUser,
     );
-    if (verified) return { message: 'Otp Verified Successfully', data: null };
-    else return { message, data: null };
+    if (verified)
+      return {
+        message: CONSTANTS.SUCCESS_MESSAGES.OTP_VERIFIED_SUCCESSFULLY,
+        data: null,
+      };
+    else {
+      throw new BadRequestException(message);
+    }
   }
 
   @Get('logout')
@@ -71,5 +80,18 @@ export class AuthControllerV1 {
   ): Promise<IResponse<any>> {
     const userExists = await this.authService.userNameAlreadyExists(username);
     return { data: { userExists }, message: null };
+  }
+
+  @Post('generateOtp')
+  @UseGuards(AuthGuardV1)
+  async generateOtp(
+    @CurrentUser() currentUser: ICurrentUser,
+  ): Promise<IResponse<any>> {
+    const { userEmail, userName } = currentUser;
+    await this.authService.generateOtp(userEmail, userName);
+    return {
+      message: CONSTANTS.SUCCESS_MESSAGES.OTP_GENERATED_SUCCESSFULLY,
+      data: null,
+    };
   }
 }
