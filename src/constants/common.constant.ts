@@ -16,8 +16,8 @@ export const CONSTANTS = {
     UNAUTHORIZED: 'You are not authorized to perform this action',
   },
   SUCCESS_MESSAGES: {
-    OTP_VERIFIED_SUCCESSFULLY: '',
-    OTP_GENERATED_SUCCESSFULLY: '',
+    OTP_VERIFIED_SUCCESSFULLY: 'Otp Verified Successfully !',
+    OTP_GENERATED_SUCCESSFULLY: 'Otp Generated Successfully !',
   },
   PASSWORD: {
     DEFAULT_MIN_LENGTH: 8,

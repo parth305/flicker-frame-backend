@@ -137,16 +137,18 @@ export class AuthServiceV1 {
     // Generate OTP
     const otp = await this.otpService.generateOtp(userEmail);
     // Send Mail
-    this.mailService.sendMail({
-      to: [userEmail],
-      template: './new-user-otp',
-      subject: 'Welcome To Flicker Frame',
-      context: {
-        userName,
-        otp,
-        expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
-      },
-    });
+    this.mailService
+      .sendMail({
+        to: [userEmail],
+        template: './new-user-otp',
+        subject: 'Welcome To Flicker Frame',
+        context: {
+          userName,
+          otp,
+          expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
+        },
+      })
+      .catch((err) => console.log(err.message));
     return { accessToken, userName, userEmail, emailVerified: false };
   }
 
@@ -201,16 +203,18 @@ export class AuthServiceV1 {
 
   async generateOtp(userEmail: string, userName: string): Promise<void> {
     const otp = await this.otpService.generateOtp(userEmail);
-    this.mailService.sendMail({
-      to: [userEmail],
-      template: './new-user-otp',
-      subject: 'Welcome To Flicker Frame',
-      context: {
-        userName,
-        otp,
-        expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
-      },
-    });
+    this.mailService
+      .sendMail({
+        to: [userEmail],
+        template: './new-user-otp',
+        subject: 'Welcome To Flicker Frame',
+        context: {
+          userName,
+          otp,
+          expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
+        },
+      })
+      .catch((err) => console.log(err.message));
     return;
   }
 }

@@ -45,7 +45,6 @@ export class AuthControllerV1 {
 
   @Post('verifyOtp')
   @UseGuards(AuthGuardV1)
-  @Serializer(ResLoginDtoV1)
   async verifyOtp(
     @CurrentUser() currentUser: ICurrentUser,
     @Body() userOtpRequest: UserOtpRequestDto,
