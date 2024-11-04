@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { MinLength } from 'class-validator';
+import { IsDate, IsNotEmpty } from 'class-validator';
 import {
   Column,
   CreateDateColumn,
@@ -23,24 +23,25 @@ export class UserInfo {
     type: 'varchar',
     length: CONSTANTS.USERS.USER_FIRST_NAME_MAX_LENGTH,
   })
-  @MinLength(2, {
-    message: 'First Name must be longer than or equal to 2 characters',
-  })
+  @IsNotEmpty({ message: 'First Name Can not be empty' })
   firstName: string;
 
   @Column({
     type: 'varchar',
     length: CONSTANTS.USERS.USER_FIRST_NAME_MAX_LENGTH,
+    nullable: true,
   })
   lastName: string;
 
-  @Column()
+  @Column({ nullable: true })
   userBio: string;
 
   @Column({ nullable: false })
+  @IsNotEmpty({ message: 'DOB Should Not Be empty' })
+  @IsDate({ message: 'Please Enter Valid DOB' })
   dob: Date;
 
-  @Column()
+  @Column({ nullable: true })
   userProfilePicUri: string;
 
   //   TODO : Move This Fields to A Base Extendable Class.
@@ -50,7 +51,7 @@ export class UserInfo {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Exclude({})
+  @Exclude()
   @OneToOne((_type) => User, (user) => user.userInfo)
   @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
   user: User;

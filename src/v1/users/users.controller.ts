@@ -13,6 +13,7 @@ import {
 
 import { Serializer } from '@/src/common/decorators';
 import { IPaginationRes, IResponse } from '@/src/common/interfaces';
+import { ICurrentUser } from '@/src/common/interfaces/current-user.interface';
 import { AuthenticationV1 } from '@/src/v1/auth/decorators';
 import {
   QueryParamsUserDtoV1,
@@ -23,6 +24,8 @@ import {
 import { User } from '@/src/v1/users/entities/user.entity';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
 
+import { CreateUserInfoV1 } from './dto/create-user-info.dto';
+import { UserInfo } from './entities/user-info.entity';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthGuardV1 } from '../auth/guards';
 
@@ -89,9 +92,23 @@ export class UsersControllerV1 {
 
   @UseGuards(AuthGuardV1)
   @Post('/userInfo/me')
-  async addUserInfo(@CurrentUser() currentUser: any) {
+  async addUserInfo(
+    @CurrentUser() currentUser: ICurrentUser,
+    @Body() createUserInfo: CreateUserInfoV1,
+  ): Promise<IResponse<UserInfo>> {
     console.log(currentUser);
-    const userInfo = await this.usersService.addUserInfo(currentUser, null);
+    const userInfo = await this.usersService.addUserInfo(
+      currentUser,
+      createUserInfo,
+    );
+    return { data: userInfo, message: 'UserInfo Added Successfully' };
+  }
+
+  @UseGuards(AuthGuardV1)
+  @Get('/userInfo/me')
+  async getUserInfo(@CurrentUser() currentUser: ICurrentUser) {
+    console.log(currentUser);
+    const userInfo = await this.usersService.getUserInfo(currentUser);
     return userInfo;
   }
 }

@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsSelect, Repository } from 'typeorm';
 
 import { IPaginationParams } from '@/src/common/interfaces';
+import { ICurrentUser } from '@/src/common/interfaces/current-user.interface';
 import { hashPassword } from '@/src/helpers';
 import {
   ConditionUserDtoV1,
@@ -17,6 +18,7 @@ import {
 } from '@/src/v1/users/dto';
 import { User } from '@/src/v1/users/entities/user.entity';
 
+import { CreateUserInfoV1 } from './dto/create-user-info.dto';
 import { UserInfo } from './entities/user-info.entity';
 
 @Injectable()
@@ -133,12 +135,28 @@ export class UsersServiceV1 {
     return isExists;
   }
 
-  async addUserInfo(currentUser, userInfo: CreateUserDtoV1) {
-    const userId = currentUser.id;
-    console.log(userInfo, userId);
+  async addUserInfo(currentUser: ICurrentUser, userInfo: CreateUserInfoV1) {
+    try {
+      const userId = currentUser.userId;
+      const user = await this.usersRepository.findOneByOrFail({ id: userId });
+      userInfo.user = user;
+      const createdUserInfo = this.usersInfoRepository.create(userInfo);
+      this.usersInfoRepository.upsert(createdUserInfo, ['user']);
+      return createdUserInfo;
+    } catch (err) {
+      throw new BadRequestException(err?.message);
+    }
   }
 
-  async getUserInfo(accessToken: string) {
-    console.log(accessToken);
+  async getUserInfo(currentUser: ICurrentUser) {
+    try {
+      const userId = currentUser.userId;
+      const userInfo = await this.usersInfoRepository.findOneByOrFail({
+        user: { id: userId },
+      });
+      return userInfo;
+    } catch (err) {
+      throw new BadRequestException('User Info Is Empty For Current User');
+    }
   }
 }
