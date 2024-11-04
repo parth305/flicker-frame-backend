@@ -13,6 +13,11 @@ export const CONSTANTS = {
     MAX_OTP_ATTEMPTS_REACHED:
       'You have exceeded the maximum number of otp attempts',
     EMAIL_NOT_VERIFIED: 'Email Is not verified',
+    UNAUTHORIZED: 'You are not authorized to perform this action',
+  },
+  SUCCESS_MESSAGES: {
+    OTP_VERIFIED_SUCCESSFULLY: '',
+    OTP_GENERATED_SUCCESSFULLY: '',
   },
   PASSWORD: {
     DEFAULT_MIN_LENGTH: 8,
