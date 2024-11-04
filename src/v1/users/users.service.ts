@@ -141,7 +141,7 @@ export class UsersServiceV1 {
       const user = await this.usersRepository.findOneByOrFail({ id: userId });
       userInfo.user = user;
       const createdUserInfo = this.usersInfoRepository.create(userInfo);
-      this.usersInfoRepository.upsert(createdUserInfo, ['user']);
+      await this.usersInfoRepository.upsert(createdUserInfo, ['user']);
       return createdUserInfo;
     } catch (err) {
       throw new BadRequestException(err?.message);
