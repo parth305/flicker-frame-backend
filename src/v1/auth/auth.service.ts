@@ -47,7 +47,7 @@ export class AuthServiceV1 {
       );
 
       if (!isCorrectPassword) {
-        throw new UnauthorizedException('Invalid data');
+        throw new UnauthorizedException('Password or Email Is Not Correct');
       }
       if (!isEmailVerified) {
         await this.generateOtp(userEmail, user.userName);
