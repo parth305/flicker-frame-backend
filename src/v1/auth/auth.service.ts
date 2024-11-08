@@ -215,6 +215,7 @@ export class AuthServiceV1 {
 
   async signInWithGoogle(currentUser: ICurrentUser) {
     // Verify If User Already Exists or Not ? If Exists Return Straight Await Else Create A New One.
+    console.log('I am here');
     try {
       const { userEmail } = currentUser;
       const isUserAlreadyRegisterd = await this.usersService.exists({
@@ -243,6 +244,8 @@ export class AuthServiceV1 {
           userName,
           userPassword,
         });
+        user.emailVerified = true;
+        await this.usersService.update({ userEmail }, user);
         // Adding userinfo for the same user as well.
         await this.usersService.addUserInfo(currentUser, {
           firstName,
@@ -267,7 +270,7 @@ export class AuthServiceV1 {
         '_' +
         (lastName || '') +
         '_' +
-        Math.random() * 10000;
+        Math.floor(Math.random() * 10000);
       foundUnique = !(await this.usersService.exists({ userName }));
     }
     return userName;
