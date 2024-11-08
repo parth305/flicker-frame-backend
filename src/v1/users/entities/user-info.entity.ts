@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { IsDate, IsNotEmpty } from 'class-validator';
+import { IsDateString, IsNotEmpty } from 'class-validator';
 import {
   Column,
   CreateDateColumn,
@@ -38,7 +38,7 @@ export class UserInfo {
 
   @Column({ nullable: false })
   @IsNotEmpty({ message: 'DOB Should Not Be empty' })
-  @IsDate({ message: 'Please Enter Valid DOB' })
+  @IsDateString()
   dob: Date;
 
   @Column({ nullable: true })
