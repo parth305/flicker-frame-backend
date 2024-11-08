@@ -139,8 +139,8 @@ export class UsersServiceV1 {
     try {
       const userId = currentUser.userId;
       const user = await this.usersRepository.findOneByOrFail({ id: userId });
-      userInfo.user = user;
       const createdUserInfo = this.usersInfoRepository.create(userInfo);
+      createdUserInfo.user = user;
       await this.usersInfoRepository.upsert(createdUserInfo, ['user']);
       return createdUserInfo;
     } catch (err) {

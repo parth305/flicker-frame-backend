@@ -217,4 +217,129 @@ export class AuthServiceV1 {
       .catch((err) => console.log(err.message));
     return;
   }
+
+  async signInWithGoogle(currentUser: ICurrentUser) {
+    // Verify If User Already Exists or Not ? If Exists Return Straight Await Else Create A New One.
+    try {
+      const { userEmail } = currentUser;
+      const isUserAlreadyRegisterd = await this.usersService.exists({
+        userEmail,
+      });
+      if (isUserAlreadyRegisterd) {
+        // return User Straight Away
+        const user = await this.usersService.findOne({ userEmail });
+        if (!user.emailVerified) {
+          user.emailVerified = true;
+          await this.usersService.update({ userEmail }, user);
+        }
+        return user;
+      } else {
+        const { firstName, lastName, dob } = currentUser;
+        const userName = await this.generateUserName(firstName, lastName);
+        const userPassword = this.generatePassword(
+          CONSTANTS.PASSWORD.DEFAULT_MIN_LOWER_CASE_COUNT,
+          CONSTANTS.PASSWORD.DEFAULT_MIN_UPPER_CASE_COUNT,
+          CONSTANTS.PASSWORD.DEFAULT_MIN_NUMBER_COUNT,
+          CONSTANTS.PASSWORD.DEFAULT_MIN_SPECIAL_CHAR_COUNT,
+          CONSTANTS.PASSWORD.DEFAULT_MIN_LENGTH,
+        );
+        const user = await this.signUp({
+          userEmail,
+          userName,
+          userPassword,
+        });
+        // Adding userinfo for the same user as well.
+        await this.usersService.addUserInfo(currentUser, {
+          firstName,
+          lastName,
+          dob: new Date(dob),
+          userBio: null,
+          userProfilePicUri: null,
+        });
+        return user;
+      }
+    } catch (err) {
+      throw new BadRequestException(err?.message);
+    }
+  }
+  private async generateUserName(firstName: string, lastName: string) {
+    // TODO: Find a better stretergy.
+    let foundUnique = false;
+    let userName;
+    while (!foundUnique) {
+      userName =
+        (firstName || '') +
+        '_' +
+        (lastName || '') +
+        '_' +
+        Math.random() * 10000;
+      foundUnique = !(await this.usersService.exists({ userName }));
+    }
+    return userName;
+  }
+
+  private generatePassword(
+    numLowercase: number,
+    numUppercase: number,
+    numNumbers: number,
+    numSpecialChars: number,
+    totalLength: number,
+  ): string {
+    // Character sets for different parts of the password
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const specialChars = '@$!%*?&';
+
+    // Ensure that the total length is valid
+    const totalRequired =
+      numLowercase + numUppercase + numNumbers + numSpecialChars;
+    if (totalLength < totalRequired) {
+      throw new Error(
+        'Total length cannot be less than the sum of specified character counts.',
+      );
+    }
+
+    // Initialize password array
+    const passwordArray: string[] = [];
+
+    // Add required number of each type of character
+    for (let i = 0; i < numLowercase; i++) {
+      passwordArray.push(
+        lowercase[Math.floor(Math.random() * lowercase.length)],
+      );
+    }
+    for (let i = 0; i < numUppercase; i++) {
+      passwordArray.push(
+        uppercase[Math.floor(Math.random() * uppercase.length)],
+      );
+    }
+    for (let i = 0; i < numNumbers; i++) {
+      passwordArray.push(numbers[Math.floor(Math.random() * numbers.length)]);
+    }
+    for (let i = 0; i < numSpecialChars; i++) {
+      passwordArray.push(
+        specialChars[Math.floor(Math.random() * specialChars.length)],
+      );
+    }
+
+    // Fill the rest of the password with random characters
+    const allChars = lowercase + uppercase + numbers + specialChars;
+    const remainingLength = totalLength - passwordArray.length;
+    for (let i = 0; i < remainingLength; i++) {
+      passwordArray.push(allChars[Math.floor(Math.random() * allChars.length)]);
+    }
+
+    // Shuffle the password to randomize the order
+    for (let i = passwordArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [passwordArray[i], passwordArray[j]] = [
+        passwordArray[j],
+        passwordArray[i],
+      ]; // Swap
+    }
+
+    // Return the generated password as a string
+    return passwordArray.join('');
+  }
 }

@@ -8,6 +8,7 @@ import {
   Param,
   BadRequestException,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 import { Serializer } from '@/src/common/decorators';
 import { IResponse } from '@/src/common/interfaces';
@@ -25,6 +26,25 @@ import { UserOtpRequestDto } from './otp/dtos/user-otp-req.dto';
 @Controller({ path: 'auth', version: '1' })
 export class AuthControllerV1 {
   constructor(private readonly authService: AuthServiceV1) {}
+
+  @Get('login/google')
+  @UseGuards(AuthGuard('google'))
+  async google(@CurrentUser() currentUser: ICurrentUser) {
+    return {
+      data: currentUser,
+      message: 'Logged In',
+    };
+  }
+
+  @Get('verify/google')
+  @UseGuards(AuthGuard('google'))
+  async verifyGoogle(@CurrentUser('google') currentUser: ICurrentUser) {
+    const response = await this.authService.signInWithGoogle(currentUser);
+    return {
+      data: response,
+      message: 'Login Successfully',
+    };
+  }
 
   @Serializer(ResLoginDtoV1)
   @Post('login')
