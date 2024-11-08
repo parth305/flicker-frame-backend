@@ -56,8 +56,12 @@ export class AuthServiceV1 {
       // Save Access Token To The DB With User ID.
       const authTokenDto = { accessToken, user };
       await this.tokenService.create(authTokenDto);
+      const { userName, id } = user;
+
       return {
-        ...user,
+        userEmail,
+        userName,
+        id,
         accessToken,
       } as unknown as ResLoginDtoV1;
     } catch (err) {

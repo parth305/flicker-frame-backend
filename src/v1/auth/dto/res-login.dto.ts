@@ -6,6 +6,7 @@ export class ResLoginDtoV1 extends LoginAuthDtoV1 {
   id: string;
   userEmail: string;
   accessToken: string;
+  userName: string;
 
   @Exclude()
   userPassword: string;
