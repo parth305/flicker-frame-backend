@@ -138,11 +138,14 @@ export class UsersServiceV1 {
   async addUserInfo(currentUser: ICurrentUser, userInfo: CreateUserInfoV1) {
     try {
       const userId = currentUser.userId;
-      const user = await this.usersRepository.findOneByOrFail({ id: userId });
+      const userPrimaryDetails = await this.usersRepository.findOneByOrFail({
+        id: userId,
+      });
       const createdUserInfo = this.usersInfoRepository.create(userInfo);
-      createdUserInfo.user = user;
+      createdUserInfo.user = userPrimaryDetails;
       await this.usersInfoRepository.upsert(createdUserInfo, ['user']);
-      return createdUserInfo;
+      const { user, ...rest } = createdUserInfo;
+      return rest;
     } catch (err) {
       throw new BadRequestException(err?.message);
     }

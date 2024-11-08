@@ -25,7 +25,7 @@ import { User } from '@/src/v1/users/entities/user.entity';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
 
 import { CreateUserInfoV1 } from './dto/create-user-info.dto';
-import { UserInfo } from './entities/user-info.entity';
+import { ResUserInfoDtoV1 } from './dto/res-user-info';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthGuardV1 } from '../auth/guards';
 
@@ -95,7 +95,7 @@ export class UsersControllerV1 {
   async addUserInfo(
     @CurrentUser() currentUser: ICurrentUser,
     @Body() createUserInfo: CreateUserInfoV1,
-  ): Promise<IResponse<UserInfo>> {
+  ): Promise<IResponse<ResUserInfoDtoV1>> {
     console.log(currentUser);
     const userInfo = await this.usersService.addUserInfo(
       currentUser,

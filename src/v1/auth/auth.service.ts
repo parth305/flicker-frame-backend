@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -37,19 +36,21 @@ export class AuthServiceV1 {
         { userEmail: userEmail },
         { id: true, userEmail: true, userPassword: true, emailVerified: true },
       );
+
+      const userInfo = await user.userInfo;
+
       // TODO : Add Redirect Logic to not allow login if email is not verified
       const isEmailVerified = user.emailVerified;
-      if (!isEmailVerified)
-        throw new ForbiddenException(
-          CONSTANTS.ERROR_MESSAGE.EMAIL_NOT_VERIFIED,
-        );
-
       const isCorrectPassword = await comparePassword(
         userPassword,
         user.userPassword,
       );
+
       if (!isCorrectPassword) {
         throw new UnauthorizedException('Invalid data');
+      }
+      if (!isEmailVerified) {
+        await this.generateOtp(userEmail, user.userName);
       }
       const payload = { sub: user.id, userEmail: user.userEmail };
       const accessToken = await this.genAccessToken(payload);
@@ -62,10 +63,12 @@ export class AuthServiceV1 {
         userEmail,
         userName,
         id,
+        isUserInfoExists: !!userInfo,
         accessToken,
+        isEmailVerified,
       } as unknown as ResLoginDtoV1;
     } catch (err) {
-      throw new UnauthorizedException('Invalid data' + err.message);
+      throw new UnauthorizedException('Invalid data ' + err.message);
     }
   }
 
@@ -138,21 +141,7 @@ export class AuthServiceV1 {
     });
     const authTokenDto = { accessToken, user: createdUser };
     await this.tokenService.create(authTokenDto);
-    // Generate OTP
-    const otp = await this.otpService.generateOtp(userEmail);
-    // Send Mail
-    this.mailService
-      .sendMail({
-        to: [userEmail],
-        template: './new-user-otp',
-        subject: 'Welcome To Flicker Frame',
-        context: {
-          userName,
-          otp,
-          expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
-        },
-      })
-      .catch((err) => console.log(err.message));
+    await this.generateOtp(userEmail, userName);
     return { accessToken, userName, userEmail, emailVerified: false };
   }
 
@@ -207,6 +196,7 @@ export class AuthServiceV1 {
 
   async generateOtp(userEmail: string, userName: string): Promise<void> {
     const otp = await this.otpService.generateOtp(userEmail);
+
     this.mailService
       .sendMail({
         to: [userEmail],
@@ -219,6 +209,7 @@ export class AuthServiceV1 {
         },
       })
       .catch((err) => console.log(err.message));
+
     return;
   }
 
@@ -345,5 +336,22 @@ export class AuthServiceV1 {
 
     // Return the generated password as a string
     return passwordArray.join('');
+  }
+  private async sendVerificationMail(userEmail: string, userName: string) {
+    const otp = await this.otpService.generateOtp(userEmail);
+    // Send Mail
+    this.mailService
+      .sendMail({
+        to: [userEmail],
+        template: './new-user-otp',
+        subject: 'Welcome To Flicker Frame',
+        context: {
+          userName,
+          otp,
+          expirationTime: CONSTANTS.OTP.OTP_EXPIRY_TIME_IN_SECONDS / 60,
+        },
+      })
+      .catch((err) => console.log(err.message));
+    return;
   }
 }
