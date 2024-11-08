@@ -9,6 +9,8 @@ export const CurrentUser = createParamDecorator((type, req): ICurrentUser => {
       userEmail: request['user'].email,
       userId: request['user'].id,
       userName: request['user'].userName,
+      firstName: request['user'].firstName,
+      lastName: request['user'].lastName,
     };
   }
   return {
