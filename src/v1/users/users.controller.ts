@@ -97,7 +97,7 @@ export class UsersControllerV1 {
     @Body() createUserInfo: CreateUserInfoV1,
   ): Promise<IResponse<ResUserInfoDtoV1>> {
     console.log(currentUser);
-    const userInfo = await this.usersService.addUserInfo(
+    const { user, ...userInfo } = await this.usersService.addUserInfo(
       currentUser,
       createUserInfo,
     );
@@ -109,6 +109,6 @@ export class UsersControllerV1 {
   async getUserInfo(@CurrentUser() currentUser: ICurrentUser) {
     console.log(currentUser);
     const userInfo = await this.usersService.getUserInfo(currentUser);
-    return userInfo;
+    return { data: userInfo, message: 'Details For Current User' };
   }
 }

@@ -144,8 +144,8 @@ export class UsersServiceV1 {
       const createdUserInfo = this.usersInfoRepository.create(userInfo);
       createdUserInfo.user = userPrimaryDetails;
       await this.usersInfoRepository.upsert(createdUserInfo, ['user']);
-      const { user, ...rest } = createdUserInfo;
-      return rest;
+      // const { user, ...rest } = createdUserInfo;
+      return createdUserInfo;
     } catch (err) {
       throw new BadRequestException(err?.message);
     }
@@ -157,6 +157,7 @@ export class UsersServiceV1 {
       const userInfo = await this.usersInfoRepository.findOneByOrFail({
         user: { id: userId },
       });
+      console.log(userInfo);
       return userInfo;
     } catch (err) {
       throw new BadRequestException('User Info Is Empty For Current User');
