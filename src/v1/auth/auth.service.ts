@@ -18,6 +18,7 @@ import { UserSignUpResponseDtoV1 } from './dto/user-sign-up-res.dto';
 import { OtpService } from './otp/otp.service';
 import { TokenServiceV1 } from '../token/token.service';
 import { CreateUserDtoV1 } from '../users/dto';
+import { User } from '../users/entities';
 
 @Injectable()
 export class AuthServiceV1 {
@@ -52,11 +53,7 @@ export class AuthServiceV1 {
       if (!isEmailVerified) {
         await this.generateOtp(userEmail, user.userName);
       }
-      const payload = { sub: user.id, userEmail: user.userEmail };
-      const accessToken = await this.genAccessToken(payload);
-      // Save Access Token To The DB With User ID.
-      const authTokenDto = { accessToken, user };
-      await this.tokenService.create(authTokenDto);
+      const accessToken = await this.generateAndStoreAccessToken(user);
       const { userName, id } = user;
 
       return {
@@ -135,12 +132,7 @@ export class AuthServiceV1 {
     };
     const createdUser = await this.usersService.create(userCreationDto);
     //  Generate Access Token For the user
-    const accessToken = await this.genAccessToken({
-      sub: createdUser.id,
-      userEmail,
-    });
-    const authTokenDto = { accessToken, user: createdUser };
-    await this.tokenService.create(authTokenDto);
+    const accessToken = await this.generateAndStoreAccessToken(createdUser);
     await this.generateOtp(userEmail, userName);
     return { accessToken, userName, userEmail, emailVerified: false };
   }
@@ -215,49 +207,82 @@ export class AuthServiceV1 {
 
   async signInWithGoogle(currentUser: ICurrentUser) {
     // Verify If User Already Exists or Not ? If Exists Return Straight Await Else Create A New One.
-    console.log('I am here');
+
+    const { userEmail } = currentUser;
+    // let user;
     try {
-      const { userEmail } = currentUser;
-      const isUserAlreadyRegisterd = await this.usersService.exists({
-        userEmail,
-      });
-      if (isUserAlreadyRegisterd) {
-        // return User Straight Away
-        const user = await this.usersService.findOne({ userEmail });
-        if (!user.emailVerified) {
-          user.emailVerified = true;
-          await this.usersService.update({ userEmail }, user);
-        }
-        return user;
-      } else {
-        const { firstName, lastName, dob } = currentUser;
-        const userName = await this.generateUserName(firstName, lastName);
-        const userPassword = this.generatePassword(
-          CONSTANTS.PASSWORD.DEFAULT_MIN_LOWER_CASE_COUNT,
-          CONSTANTS.PASSWORD.DEFAULT_MIN_UPPER_CASE_COUNT,
-          CONSTANTS.PASSWORD.DEFAULT_MIN_NUMBER_COUNT,
-          CONSTANTS.PASSWORD.DEFAULT_MIN_SPECIAL_CHAR_COUNT,
-          CONSTANTS.PASSWORD.DEFAULT_MIN_LENGTH,
-        );
-        const user = await this.signUp({
-          userEmail,
-          userName,
-          userPassword,
-        });
+      const user = await this.usersService.findOne({ userEmail });
+      if (!user.emailVerified) {
         user.emailVerified = true;
         await this.usersService.update({ userEmail }, user);
-        // Adding userinfo for the same user as well.
-        await this.usersService.addUserInfo(currentUser, {
-          firstName,
-          lastName,
-          dob: new Date(dob),
-          userBio: null,
-          userProfilePicUri: null,
-        });
-        return user;
       }
+      const userInfo = await user.userInfo;
+      let userInfoExists = !!userInfo;
+      if (!userInfoExists) {
+        // We Need To Add New UserInfo Here.
+        const { firstName, lastName } = currentUser;
+        const createdUserInfo = await this.usersService.addUserInfo(
+          currentUser,
+          {
+            firstName,
+            lastName,
+            dob: new Date(),
+            userBio: null,
+            userProfilePicUri: null,
+          },
+        );
+        userInfoExists = !!createdUserInfo.id;
+      }
+
+      const accessToken = await this.generateAndStoreAccessToken(user);
+
+      const { userName, id, emailVerified } = user;
+      return {
+        accessToken,
+        userEmail,
+        userName,
+        id,
+        isUserInfoExists: userInfoExists,
+        isEmailVerified: emailVerified,
+      };
     } catch (err) {
-      throw new BadRequestException(err?.message);
+      // User Does Not Exists In DB
+      console.log('User Does Not Exists');
+      const { firstName, lastName } = currentUser;
+      const userName = await this.generateUserName(firstName, lastName);
+      const userPassword = this.generatePassword(
+        CONSTANTS.PASSWORD.DEFAULT_MIN_LOWER_CASE_COUNT,
+        CONSTANTS.PASSWORD.DEFAULT_MIN_UPPER_CASE_COUNT,
+        CONSTANTS.PASSWORD.DEFAULT_MIN_NUMBER_COUNT,
+        CONSTANTS.PASSWORD.DEFAULT_MIN_SPECIAL_CHAR_COUNT,
+        CONSTANTS.PASSWORD.DEFAULT_MIN_LENGTH,
+      );
+      await this.signUp({
+        userEmail,
+        userName,
+        userPassword,
+      });
+      const emailVerified = true;
+      await this.usersService.update({ userEmail }, { emailVerified });
+      // Adding userinfo for the same user as well.
+      const createdUserInfo = await this.usersService.addUserInfo(currentUser, {
+        firstName,
+        lastName,
+        dob: new Date(),
+        userBio: null,
+        userProfilePicUri: null,
+      });
+
+      const createdUser = createdUserInfo.user;
+      const accessToken = await this.generateAndStoreAccessToken(createdUser);
+
+      return {
+        accessToken,
+        userEmail,
+        userName,
+        isEmailVerified: true,
+        isUserInfoExists: !!createdUserInfo,
+      };
     }
   }
   private async generateUserName(firstName: string, lastName: string) {
@@ -356,5 +381,25 @@ export class AuthServiceV1 {
       })
       .catch((err) => console.log(err.message));
     return;
+  }
+
+  private async generateAndStoreAccessToken(user: User) {
+    const payload = { sub: user.id, userEmail: user.userEmail };
+    const accessToken = await this.genAccessToken(payload);
+    // Save Access Token To The DB With User ID.
+    const authTokenDto = { accessToken, user };
+    await this.tokenService.create(authTokenDto);
+    return accessToken;
+  }
+
+  private async addUserInfoForGoogleLogin(currentUser) {
+    const { firstName, lastName } = currentUser;
+    await this.usersService.addUserInfo(currentUser, {
+      firstName,
+      lastName,
+      dob: new Date(),
+      userBio: null,
+      userProfilePicUri: null,
+    });
   }
 }
