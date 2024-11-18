@@ -250,7 +250,7 @@ export class AuthServiceV1 {
       await this.usersService.update({ userEmail }, { emailVerified });
       // Adding userinfo for the same user as well.
 
-      user = userInfo.user;
+      user = await this.usersService.findOne({ userEmail });
     }
     const accessToken = await this.generateAndStoreAccessToken(user);
     const { userName } = user;
