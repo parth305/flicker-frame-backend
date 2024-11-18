@@ -11,6 +11,7 @@ import { CONSTANTS } from '@/src/constants/common.constant';
 import { comparePassword } from '@/src/helpers';
 import { MailService } from '@/src/mail/mail.service';
 import { LoginAuthDtoV1, ResLoginDtoV1 } from '@/src/v1/auth/dto';
+import { UserInfo } from '@/src/v1/users/entities/user-info.entity';
 import { UsersServiceV1 } from '@/src/v1/users/users.service';
 
 import { SignUpAuthDtoV1 } from './dto/sign-up-auth-dto';
@@ -208,47 +209,23 @@ export class AuthServiceV1 {
   async signInWithGoogle(currentUser: ICurrentUser) {
     // Verify If User Already Exists or Not ? If Exists Return Straight Await Else Create A New One.
 
-    const { userEmail } = currentUser;
-    // let user;
+    const { userEmail, firstName, lastName } = currentUser;
+    let user: User | null = null;
+    let userInfo: UserInfo | null = null;
     try {
-      const user = await this.usersService.findOne({ userEmail });
+      user = await this.usersService.findOne({ userEmail });
+    } catch (err) {
+      // user = null;
+      // Logging The Info Of User Not Being Present
+    }
+    if (user) {
+      // Return Regular Data For The User
       if (!user.emailVerified) {
         user.emailVerified = true;
         await this.usersService.update({ userEmail }, user);
       }
-      const userInfo = await user.userInfo;
-      let userInfoExists = !!userInfo;
-      if (!userInfoExists) {
-        // We Need To Add New UserInfo Here.
-        const { firstName, lastName } = currentUser;
-        const createdUserInfo = await this.usersService.addUserInfo(
-          currentUser,
-          {
-            firstName,
-            lastName,
-            dob: new Date(),
-            userBio: null,
-            userProfilePicUri: null,
-          },
-        );
-        userInfoExists = !!createdUserInfo.id;
-      }
-
-      const accessToken = await this.generateAndStoreAccessToken(user);
-
-      const { userName, id, emailVerified } = user;
-      return {
-        accessToken,
-        userEmail,
-        userName,
-        id,
-        isUserInfoExists: userInfoExists,
-        isEmailVerified: emailVerified,
-      };
-    } catch (err) {
-      // User Does Not Exists In DB
-      console.log('User Does Not Exists');
-      const { firstName, lastName } = currentUser;
+    } else {
+      // Create New User
       const userName = await this.generateUserName(firstName, lastName);
       const userPassword = this.generatePassword(
         CONSTANTS.PASSWORD.DEFAULT_MIN_LOWER_CASE_COUNT,
@@ -265,25 +242,29 @@ export class AuthServiceV1 {
       const emailVerified = true;
       await this.usersService.update({ userEmail }, { emailVerified });
       // Adding userinfo for the same user as well.
-      const createdUserInfo = await this.usersService.addUserInfo(currentUser, {
-        firstName,
-        lastName,
-        dob: new Date(),
-        userBio: null,
-        userProfilePicUri: null,
-      });
 
-      const createdUser = createdUserInfo.user;
-      const accessToken = await this.generateAndStoreAccessToken(createdUser);
-
-      return {
-        accessToken,
-        userEmail,
-        userName,
-        isEmailVerified: true,
-        isUserInfoExists: !!createdUserInfo,
-      };
+      user = userInfo.user;
     }
+    const accessToken = await this.generateAndStoreAccessToken(user);
+    const { userName } = user;
+    userInfo = await user.userInfo;
+    const isUserInfoExists = !!userInfo;
+
+    return {
+      accessToken,
+      userEmail,
+      userName,
+      isEmailVerified: true,
+      isUserInfoExists,
+      userInfo: {
+        firstName: isUserInfoExists
+          ? userInfo?.firstName
+          : currentUser?.firstName,
+        lastName: isUserInfoExists ? userInfo?.lastName : currentUser?.lastName,
+        userProfilePicUri: userInfo?.userProfilePicUri,
+        dob: isUserInfoExists ? userInfo?.dob : currentUser?.dob,
+      },
+    };
   }
   private async generateUserName(firstName: string, lastName: string) {
     // TODO: Find a better stretergy.

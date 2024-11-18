@@ -4,5 +4,5 @@ export interface ICurrentUser {
   userName?: string;
   firstName?: string;
   lastName?: string;
-  dob?: string;
+  dob?: Date;
 }
