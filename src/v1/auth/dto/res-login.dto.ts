@@ -7,6 +7,14 @@ export class ResLoginDtoV1 extends LoginAuthDtoV1 {
   userEmail: string;
   accessToken: string;
   userName: string;
+  isUserInfoExists: boolean;
+  isEmailVerified: boolean;
+  userInfo: {
+    firstName: string;
+    lastName: string;
+    dob: Date;
+    userProfilePicUri: string;
+  };
 
   @Exclude()
   userPassword: string;

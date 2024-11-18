@@ -56,6 +56,7 @@ export class AuthServiceV1 {
       }
       const accessToken = await this.generateAndStoreAccessToken(user);
       const { userName, id } = user;
+      const { firstName, lastName, dob, userProfilePicUri } = userInfo;
 
       return {
         userEmail,
@@ -64,6 +65,12 @@ export class AuthServiceV1 {
         isUserInfoExists: !!userInfo,
         accessToken,
         isEmailVerified,
+        userInfo: {
+          firstName,
+          lastName,
+          dob,
+          userProfilePicUri,
+        },
       } as unknown as ResLoginDtoV1;
     } catch (err) {
       throw new UnauthorizedException('Invalid data ' + err.message);
