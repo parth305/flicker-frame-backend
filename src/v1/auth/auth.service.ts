@@ -279,9 +279,9 @@ export class AuthServiceV1 {
     let userName;
     while (!foundUnique) {
       userName =
-        (firstName || '') +
+        (firstName.toLowerCase() || '') +
         '_' +
-        (lastName || '') +
+        (lastName.toLowerCase() || '') +
         '_' +
         Math.floor(Math.random() * 10000);
       foundUnique = !(await this.usersService.exists({ userName }));
