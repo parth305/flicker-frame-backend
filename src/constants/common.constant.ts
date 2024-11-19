@@ -17,6 +17,7 @@ export const CONSTANTS = {
     UNABLE_TO_UPDATE_PASSWORD:
       'Password update request failed, please try again.',
     PLEASE_PROVIDE_VALID_EMAIL: 'Please Provide Valid Email',
+    INCORRECT_OTP: 'Incorrect Otp.',
   },
   SUCCESS_MESSAGES: {
     PASSWORD_RESET_LINK_SHARED:

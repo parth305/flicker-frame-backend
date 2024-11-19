@@ -56,7 +56,7 @@ export class OtpService {
           1,
         );
         return {
-          message: CONSTANTS.ERROR_MESSAGE.OTP_TIME_EXPIRED,
+          message: CONSTANTS.ERROR_MESSAGE.INCORRECT_OTP,
           verified: false,
         };
       }
