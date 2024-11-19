@@ -14,8 +14,13 @@ export const CONSTANTS = {
       'You have exceeded the maximum number of otp attempts',
     EMAIL_NOT_VERIFIED: 'Email Is not verified',
     UNAUTHORIZED: 'You are not authorized to perform this action',
+    UNABLE_TO_UPDATE_PASSWORD:
+      'Password update request failed, please try again.',
+    PLEASE_PROVIDE_VALID_EMAIL: 'Please Provide Valid Email',
   },
   SUCCESS_MESSAGES: {
+    PASSWORD_RESET_LINK_SHARED:
+      'Password reset link is shared in mail.Please Check',
     OTP_VERIFIED_SUCCESSFULLY: 'Otp Verified Successfully !',
     OTP_GENERATED_SUCCESSFULLY: 'Otp Generated Successfully !',
   },

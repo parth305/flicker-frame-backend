@@ -38,11 +38,6 @@ export class AuthServiceV1 {
         { userEmail: userEmail },
         { id: true, userEmail: true, userPassword: true, emailVerified: true },
       );
-
-      const userInfo = await user.userInfo;
-
-      // TODO : Add Redirect Logic to not allow login if email is not verified
-      const isEmailVerified = user.emailVerified;
       const isCorrectPassword = await comparePassword(
         userPassword,
         user.userPassword,
@@ -51,18 +46,22 @@ export class AuthServiceV1 {
       if (!isCorrectPassword) {
         throw new UnauthorizedException('Password or Email Is Not Correct');
       }
+
+      // TODO : Add Redirect Logic to not allow login if email is not verified
+      const isEmailVerified = user.emailVerified;
       if (!isEmailVerified) {
         await this.generateOtp(userEmail, user.userName);
       }
       const accessToken = await this.generateAndStoreAccessToken(user);
       const { userName, id } = user;
-      const { firstName, lastName, dob, userProfilePicUri } = userInfo;
-
+      const userInfo = await user.userInfo;
+      const { firstName, lastName, dob, userProfilePicUri } = userInfo || {};
+      const isUserInfoExists = !!userInfo;
       return {
         userEmail,
         userName,
         id,
-        isUserInfoExists: !!userInfo,
+        isUserInfoExists,
         accessToken,
         isEmailVerified,
         userInfo: {
@@ -106,7 +105,6 @@ export class AuthServiceV1 {
 
   async genAccessToken(data: object) {
     try {
-      console.log('Starting To Generate Token');
       const accessToken = await this.genJWT(
         data,
         ENV_VARIABLES.ACCESS_TOKEN_SECRET,
@@ -158,7 +156,6 @@ export class AuthServiceV1 {
         userEmail,
         otpValue,
       );
-      console.log(otpVerificationRespone, '=');
       const { verified } = otpVerificationRespone;
       if (verified) {
         await this.usersService.update(
@@ -218,7 +215,7 @@ export class AuthServiceV1 {
 
     const { userEmail, firstName, lastName } = currentUser;
     let user: User | null = null;
-    let userInfo: UserInfo | null = null;
+    let userInfo: Partial<UserInfo> | null = null;
     try {
       user = await this.usersService.findOne({ userEmail });
     } catch (err) {
@@ -241,11 +238,13 @@ export class AuthServiceV1 {
         CONSTANTS.PASSWORD.DEFAULT_MIN_SPECIAL_CHAR_COUNT,
         CONSTANTS.PASSWORD.DEFAULT_MIN_LENGTH,
       );
-      await this.signUp({
-        userEmail,
+      const userCreationDto: CreateUserDtoV1 = {
         userName,
+        userEmail,
         userPassword,
-      });
+        emailVerified: true,
+      };
+      await this.usersService.create(userCreationDto);
       const emailVerified = true;
       await this.usersService.update({ userEmail }, { emailVerified });
       // Adding userinfo for the same user as well.
@@ -389,5 +388,45 @@ export class AuthServiceV1 {
       userBio: null,
       userProfilePicUri: null,
     });
+  }
+
+  public async processForgetPasswordRequest(userEmail: string) {
+    if (!userEmail) {
+      throw new BadRequestException(
+        CONSTANTS.ERROR_MESSAGE.PLEASE_PROVIDE_VALID_EMAIL,
+      );
+    }
+    try {
+      const user = await this.usersService.findOne({ userEmail });
+      const accessToken = await this.generateAndStoreAccessToken(user);
+      const redirectUri = `${process.env.CLIENT_FORGOT_URL_PATH}?secret=${accessToken}`;
+      this.mailService
+        .sendMail({
+          to: [userEmail],
+          template: './forgot-password',
+          subject: 'Reset Password',
+          context: {
+            userName: user?.userName,
+            resetLink: redirectUri,
+          },
+        })
+        .catch((err) => console.log(err.message));
+      return;
+    } catch (err) {
+      return;
+    }
+  }
+  async updatePassword(currentUser: ICurrentUser, updatedPassword: string) {
+    try {
+      console.log(currentUser);
+      await this.usersService.update(
+        { userEmail: currentUser.userEmail },
+        { userPassword: updatedPassword },
+      );
+    } catch (err) {
+      throw new BadRequestException(
+        CONSTANTS.ERROR_MESSAGE.UNABLE_TO_UPDATE_PASSWORD,
+      );
+    }
   }
 }

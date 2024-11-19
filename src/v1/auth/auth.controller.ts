@@ -1,12 +1,13 @@
 import {
-  Controller,
-  Post,
-  Body,
-  Get,
-  UseGuards,
-  Req,
-  Param,
   BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -101,16 +102,25 @@ export class AuthControllerV1 {
     return { data: { userExists }, message: null };
   }
 
-  @Post('generateOtp')
-  @UseGuards(AuthGuardV1)
-  async generateOtp(
-    @CurrentUser() currentUser: ICurrentUser,
-  ): Promise<IResponse<any>> {
-    const { userEmail, userName } = currentUser;
-    await this.authService.generateOtp(userEmail, userName);
+  @Get('resetPassword')
+  // @UseGuards(AuthGuardV1)
+  async generateOtp(@Query('email') email: string): Promise<IResponse<any>> {
+    await this.authService.processForgetPasswordRequest(email);
     return {
-      message: CONSTANTS.SUCCESS_MESSAGES.OTP_GENERATED_SUCCESSFULLY,
+      message: CONSTANTS.SUCCESS_MESSAGES.PASSWORD_RESET_LINK_SHARED,
       data: null,
     };
+  }
+
+  @Post('updatePassword')
+  @UseGuards(AuthGuardV1)
+  async updatePassword(
+    @CurrentUser() currentUser: ICurrentUser,
+    @Body() updatePasswordReq: LoginAuthDtoV1,
+  ) {
+    await this.authService.updatePassword(
+      currentUser,
+      updatePasswordReq.userPassword,
+    );
   }
 }
