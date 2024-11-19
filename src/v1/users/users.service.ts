@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsSelect, Repository } from 'typeorm';
 
 import { IPaginationParams } from '@/src/common/interfaces';
+import { ICurrentUser } from '@/src/common/interfaces/current-user.interface';
 import { hashPassword } from '@/src/helpers';
 import {
   ConditionUserDtoV1,
@@ -17,25 +18,37 @@ import {
 } from '@/src/v1/users/dto';
 import { User } from '@/src/v1/users/entities/user.entity';
 
+import { CreateUserInfoV1 } from './dto/create-user-info.dto';
+import { UserInfo } from './entities/user-info.entity';
+
 @Injectable()
 export class UsersServiceV1 {
   constructor(
     @InjectRepository(User) private usersRepository: Repository<User>,
+    @InjectRepository(UserInfo)
+    private usersInfoRepository: Repository<UserInfo>,
   ) {}
 
   async create(createUserDto: CreateUserDtoV1) {
     try {
-      const isExist = await this.exists({
-        userEmail: createUserDto.userEmail,
+      const { userName, userEmail, userPassword } = createUserDto;
+      const isEmailAlreadyPresent = await this.exists({
+        userEmail,
       });
-      if (isExist) {
+      if (isEmailAlreadyPresent) {
         throw new BadRequestException(
           'User is already registered with same email',
         );
       }
-      createUserDto.userPassword = await hashPassword(
-        createUserDto.userPassword,
-      );
+      const isUserNameAlreadyPresent = await this.exists({
+        userName,
+      });
+      if (isUserNameAlreadyPresent) {
+        throw new BadRequestException(
+          'User is already registered with same username',
+        );
+      }
+      createUserDto.userPassword = await hashPassword(userPassword);
       const user = this.usersRepository.create(createUserDto);
       await this.usersRepository.save(user);
       return user;
@@ -69,9 +82,6 @@ export class UsersServiceV1 {
     try {
       const user = await this.usersRepository.findOneOrFail({
         where: conditions,
-        relations: {
-          address: true,
-        },
         select,
       });
       return user;
@@ -123,5 +133,34 @@ export class UsersServiceV1 {
   async exists(conditions: ConditionUserDtoV1) {
     const isExists = await this.usersRepository.existsBy(conditions);
     return isExists;
+  }
+
+  async addUserInfo(currentUser: ICurrentUser, userInfo: CreateUserInfoV1) {
+    try {
+      const userId = currentUser.userId;
+      const userPrimaryDetails = await this.usersRepository.findOneByOrFail({
+        id: userId,
+      });
+      const createdUserInfo = this.usersInfoRepository.create(userInfo);
+      createdUserInfo.user = userPrimaryDetails;
+      await this.usersInfoRepository.upsert(createdUserInfo, ['user']);
+      // const { user, ...rest } = createdUserInfo;
+      return createdUserInfo;
+    } catch (err) {
+      throw new BadRequestException(err?.message);
+    }
+  }
+
+  async getUserInfo(currentUser: ICurrentUser) {
+    try {
+      const userId = currentUser.userId;
+      const userInfo = await this.usersInfoRepository.findOneByOrFail({
+        user: { id: userId },
+      });
+      console.log(userInfo);
+      return userInfo;
+    } catch (err) {
+      throw new BadRequestException('User Info Is Empty For Current User');
+    }
   }
 }

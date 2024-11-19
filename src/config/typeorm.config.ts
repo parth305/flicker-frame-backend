@@ -10,7 +10,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   username: ENV_VARIABLES.DB_USERNAME,
   password: ENV_VARIABLES.DB_PASSWORD,
   database: ENV_VARIABLES.DB_DATABASE_NAME,
-  synchronize: false,
+  synchronize: true,
   logging: false,
   entities: ['dist/**/entities/*.entity{.ts,.js}'],
   migrations: ['dist/migrations/*{.ts,.js}'],

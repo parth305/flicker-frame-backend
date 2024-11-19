@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Flicker Frame!</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2b2b2b;
+      color: #e0e0e0;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 500px;
+      margin: 20px auto;
+      background: #3b3b3b;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      color: #81c784;
+      font-size: 24px;
+    }
+    .otp {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ffb74d;
+    }
+    .message {
+      margin-top: 10px;
+      color: #a0a0a0;
+    }
+    .footer {
+      font-size: 12px;
+      color: #757575;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to Flicker Frame, <%= userName %>!</h1>
+    
+    <p>We’re excited to have you on board! Please use the following OTP to verify your account:</p>
+    
+    <p class="otp"><%= otp %></p>
+
+    <p class="message">This OTP is valid for the next <%= expirationTime %> minutes.</p>
+
+    <div class="footer">
+      <p>If you didn’t request this email, please ignore it.</p>
+      <p>Best regards,<br>The Flicker Frame Team</p>
+    </div>
+  </div>
+</body>
+</html>
