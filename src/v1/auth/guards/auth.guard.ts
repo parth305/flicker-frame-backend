@@ -27,10 +27,7 @@ export class AuthGuardV1 implements CanActivate {
         throw new UnauthorizedException('Invalid token');
       }
       const payload = await this.authService.verifyAccessToken(accessToken);
-      const user = await this.usersService.findOne(
-        { id: payload.sub },
-        { id: true, userEmail: true, userName: true, userRole: true },
-      );
+      const user = await this.usersService.findOne({ id: payload.sub });
       request['user'] = user;
       return true;
     } catch (err) {

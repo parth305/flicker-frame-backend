@@ -3,12 +3,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { Address } from '@/src/v1/addresses/entities';
+import { Post } from '@/src/v1/posts/entities/post.entity';
 import { EUsersRole } from '@/src/v1/users/types/user.type';
 
 @Entity()
@@ -40,6 +42,9 @@ export class User {
 
   @OneToOne((_type) => Address, (address) => address.user)
   address: Address;
+
+  @OneToMany((_type) => Post, (post) => post.user)
+  post: Post;
 
   @CreateDateColumn()
   createdAt: Date;
